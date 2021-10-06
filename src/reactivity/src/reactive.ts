@@ -1,5 +1,6 @@
 import { track, trigger } from './effect'
 
+// 接受一个对象作为参数
 export function reactive(raw) {
 	// 返回 Proxy 的实例
 	return new Proxy(raw, {

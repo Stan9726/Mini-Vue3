@@ -34,8 +34,12 @@ export const mutableHandlers = {
 
 export const readonlyHandlers = {
 	get: readonlyGet,
-	set() {
-		// TODO 警告!
+	set(target, key) {
+		// 调用 console.warn 发出警告
+		console.warn(
+			`Set operation on key "${key}" failed: target is readonly.`,
+			target
+		)
 		return true
 	}
 }

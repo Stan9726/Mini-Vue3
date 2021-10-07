@@ -1,6 +1,16 @@
+import { extend } from './../../shared/index'
+// 用于记录是否应该收集依赖，防止调用 stop 函数后触发响应式对象的 property 的 get 时收集依赖
+let shouldTrack: boolean = false
+
 // 抽离出一个 ReactiveEffect 类，对操作进行封装
 class ReactiveEffect {
 	private _fn: any
+	// 用于保存与当前实例相关的响应式对象的 property 对应的 Set 实例
+	deps: Array<Set<ReactiveEffect>> = []
+	// 用于记录当前实例状态，为 true 时未调用 stop 方法，否则已调用，防止重复调用 stop 方法
+	active: boolean = true
+	// 用于保存当前实例的 onStop 方法
+	onStop?: () => void
 
 	// 构造函数接收可选的第二个参数，保存为实例的公共变量 scheduler
 	constructor(fn, public scheduler?) {
@@ -8,26 +18,63 @@ class ReactiveEffect {
 		this._fn = fn
 	}
 
-	// 执行传入的函数
+	// 用于执行传入的函数
 	run() {
+		// 若已调用 stop 方法则直接返回传入的函数执行的结果
+		if (!this.active) {
+			return this._fn()
+		}
+
+		// 应该收集依赖
+		shouldTrack = true
 		// 调用 run 方法时，用全局变量 activeEffect 保存当前实例
 		activeEffect = this
 
+		const res = this._fn()
+		// 重置
+		shouldTrack = false
+
 		// 返回传入的函数执行的结果
-		return this._fn()
+		return res
 	}
+
+	// 用于停止传入的函数的执行
+	stop() {
+		if (this.active) {
+			cleanupEffect(this)
+			// 在调用 stop 方法时，调用 onStop 方法
+			if (this.onStop) {
+				this.onStop()
+			}
+			this.active = false
+		}
+	}
+}
+
+// 用于将传入的 ReactiveEffect 类的实例从与该实例相关的响应式对象的 property 对应的 Set 实例中删除
+function cleanupEffect(effect: ReactiveEffect) {
+	effect.deps.forEach((dep: any) => {
+		dep.delete(effect)
+	})
 }
 
 // 接收一个函数作为第一个参数，接收一个对象作为第二个参数
 export function effect(fn, options: any = {}) {
 	// 利用传入的函数创建 ReactiveEffect 类的实例，并将 scheduler 方法传给 ReactiveEffect 类的构造函数
 	const _effect: ReactiveEffect = new ReactiveEffect(fn, options.scheduler)
+	// 将第二个参数即 options 对象的属性和方法赋值给 ReactiveEffect 类的实例
+	extend(_effect, options)
 
 	// 调用 ReactiveEffect 实例的 run 方法，执行传入的函数
 	_effect.run()
 
-	// 返回 _effect.run，并将其 this 指向指定为 _effect
-	return _effect.run.bind(_effect)
+	// 用一个变量 runner 保存将 _effect.run 的 this 指向指定为 _effect 的结果
+	const runner: any = _effect.run.bind(_effect)
+	// 将 _effect 赋值给 runner 的 effect property
+	runner.effect = _effect
+
+	// 返回 runner
+	return runner
 }
 
 /**
@@ -38,7 +85,7 @@ export function effect(fn, options: any = {}) {
 const targetsMap = new WeakMap()
 
 // 用于保存正在执行的 ReactiveEffect 类的实例
-let activeEffect: ReactiveEffect
+let activeEffect: ReactiveEffect | undefined
 
 // 用于收集依赖
 export function track(target, key) {
@@ -68,8 +115,15 @@ export function track(target, key) {
 		depsMap.set(key, dep)
 	}
 
+	// 若不应该收集依赖则直接返回
+	if (!shouldTrack) {
+		return
+	}
+
 	// 将当前正在执行的 ReactiveEffect 类的实例添加到 dep 中
-	dep.add(activeEffect)
+	dep.add(activeEffect!)
+	// 将 dep 添加到当前正在执行的 ReactiveEffect 类的实例的 deps property 中
+	activeEffect?.deps.push(dep)
 }
 
 // 用于触发依赖
@@ -90,4 +144,10 @@ export function trigger(target, key) {
 			reactiveEffect.run()
 		}
 	}
+}
+
+// 用于停止传入的函数的执行
+export function stop(runner) {
+	// 调用 runner 的 effect property 的 stop 方法
+	runner.effect.stop()
 }

@@ -1,4 +1,4 @@
-import { effect } from '../src/effect'
+import { effect, stop } from '../src/effect'
 import { reactive } from '../src/reactive'
 
 describe('effect', () => {
@@ -63,9 +63,36 @@ describe('effect', () => {
 		runner()
 		expect(scheduler).toHaveBeenCalledTimes(1)
 		expect(dummy).toBe(2)
+	})
 
-		obj.foo++
-		expect(scheduler).toHaveBeenCalledTimes(2)
+	it('stop', () => {
+		let dummy
+		const obj = reactive({ prop: 1 })
+		const runner = effect(() => {
+			dummy = obj.prop
+		})
+		obj.prop = 2
 		expect(dummy).toBe(2)
+		// 调用`stop`函数后，当传入的函数依赖的响应式对象的 property 的值更新时不会再执行该函数
+		stop(runner)
+		obj.prop = 3
+		expect(dummy).toBe(2)
+		obj.prop++
+		expect(dummy).toBe(2)
+		// 只有当调用`runner`时才会恢复执行该函数
+		runner()
+		expect(dummy).toBe(4)
+	})
+
+	it('events: onStop', () => {
+		// 创建 mock 函数
+		const onStop = jest.fn()
+		const runner = effect(() => {}, {
+			onStop
+		})
+
+		// 调用 stop 函数时，会执行 onStop 方法
+		stop(runner)
+		expect(onStop).toHaveBeenCalled()
 	})
 })

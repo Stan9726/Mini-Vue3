@@ -1,4 +1,6 @@
+import { isObject } from './../../shared/index'
 import { track, trigger } from './effect'
+import { reactive, readonly } from './reactive'
 
 // 对 get 和 set 进行缓存，防止重复调用工具函数
 const get = createGetter()
@@ -24,10 +26,17 @@ function createGetter(isReadonly = false) {
 		}
 
 		const res = Reflect.get(target, key)
+
+		// 若 property 的值为对象，则利用 reactive 和 readonly 进行响应式转换
+		if (isObject(res)) {
+			return isReadonly ? readonly(res) : reactive(res)
+		}
+
 		if (!isReadonly) {
 			// 收集依赖
 			track(target, key)
 		}
+
 		return res
 	}
 }

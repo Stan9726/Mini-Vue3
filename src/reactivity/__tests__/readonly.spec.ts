@@ -27,4 +27,11 @@ describe('reactivity/readonly', () => {
 		// 修改 readonly 响应式对象的 property 的值时会调用 console.warn 发出警告
 		expect(console.warn).toBeCalled()
 	})
+
+	it('should make nested values readonly', () => {
+		const original = { foo: { bar: 1 } }
+		const wrapped = readonly(original)
+		// 嵌套对象是响应式的
+		expect(isReadonly(wrapped.foo)).toBe(true)
+	})
 })

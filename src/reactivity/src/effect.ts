@@ -89,6 +89,11 @@ let activeEffect: ReactiveEffect | undefined
 
 // 用于收集依赖
 export function track(target, key) {
+	// 若不应该收集依赖则直接返回
+	if (!shouldTrack || activeEffect === undefined) {
+		return
+	}
+
 	// 获取当前响应式对象对应的 Map 实例,若为 undefined 则进行初始化并保存到 targetsMap 中
 	/**
 	 * 用于保存当前响应式对象的所有依赖
@@ -115,8 +120,8 @@ export function track(target, key) {
 		depsMap.set(key, dep)
 	}
 
-	// 若不应该收集依赖则直接返回
-	if (!shouldTrack) {
+	// 若 dep 中包括当前正在执行的 ReactiveEffect 类的实例则直接返回
+	if (dep.has(activeEffect!)) {
 		return
 	}
 

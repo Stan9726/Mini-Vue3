@@ -1,5 +1,5 @@
 import { extend } from './../../shared/index'
-// 用于记录是否应该收集依赖，防止调用 stop 函数后触发响应式对象的 property 的 get 时收集依赖
+// 用于记录是否应该收集依赖，防止调用 stop 后触发响应式对象的 property 的 get 时收集依赖
 let shouldTrack: boolean = false
 
 // 抽离出一个 ReactiveEffect 类，对操作进行封装

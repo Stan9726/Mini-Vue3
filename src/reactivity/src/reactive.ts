@@ -1,17 +1,25 @@
 import {
 	mutableHandlers,
 	ReactiveFlags,
-	readonlyHandlers
+	readonlyHandlers,
+	shallowHandlers,
+	shallowReadonlyHandlers
 } from './baseHandlers'
 
-// 接收一个对象作为参数
 export function reactive(raw) {
 	return createReactiveObject(raw, mutableHandlers)
 }
 
-// 接收一个对象作为参数
 export function readonly(raw) {
 	return createReactiveObject(raw, readonlyHandlers)
+}
+
+export function shallowReactive(raw) {
+	return createReactiveObject(raw, shallowHandlers)
+}
+
+export function shallowReadonly(raw) {
+	return createReactiveObject(raw, shallowReadonlyHandlers)
 }
 
 // 用于创建 Proxy 实例的工具函数

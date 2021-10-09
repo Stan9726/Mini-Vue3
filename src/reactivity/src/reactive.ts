@@ -1,3 +1,4 @@
+import { isObject } from '../../shared'
 import {
 	mutableHandlers,
 	ReactiveFlags,
@@ -45,3 +46,6 @@ export function isProxy(value): boolean {
 	// 利用 isReactive 和 isReadonly 进行判断
 	return isReactive(value) || isReadonly(value)
 }
+
+// 用于对值进行处理，若为对象则利用 reactive 进行响应式处理，否则直接返回
+export const toReactive = value => (isObject(value) ? reactive(value) : value)

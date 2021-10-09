@@ -90,7 +90,7 @@ let activeEffect: ReactiveEffect | undefined
 // 用于收集依赖
 export function track(target, key) {
 	// 若不应该收集依赖则直接返回
-	if (!shouldTrack || activeEffect === undefined) {
+	if (!isTracking()) {
 		return
 	}
 
@@ -120,6 +120,16 @@ export function track(target, key) {
 		depsMap.set(key, dep)
 	}
 
+	trackEffects(dep)
+}
+
+// 用于判断是否应该收集依赖
+export function isTracking() {
+	return shouldTrack && activeEffect !== undefined
+}
+
+// 用于将当前正在执行的 ReactiveEffect 类的实例添加到 dep 中， 同时将 dep 添加到当前正在执行的 ReactiveEffect 类的实例的 deps property 中
+export function trackEffects(dep) {
 	// 若 dep 中包括当前正在执行的 ReactiveEffect 类的实例则直接返回
 	if (dep.has(activeEffect!)) {
 		return
@@ -138,6 +148,11 @@ export function trigger(target, key) {
 	// 获取当前 property 对应的 Set 实例
 	const dep: Set<ReactiveEffect> = depsMap.get(key)!
 
+	triggerEffects(dep)
+}
+
+// 用于遍历 dep，调用每一个 ReactiveEffect 类的实例的 scheduler 方法或 run 方法
+export function triggerEffects(dep) {
 	/**
 	 * 遍历 dep，判断每一个 ReactiveEffect 类的实例的 scheduler property 是否存在
 	 * 若不为 undefined 则调用 scheduler 方法，否则调用 run 方法

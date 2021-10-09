@@ -1,5 +1,6 @@
 import { effect } from '../src/effect'
-import { ref } from '../src/ref'
+import { reactive } from '../src/reactive'
+import { isRef, ref, unref } from '../src/ref'
 
 describe('reactivity/ref', () => {
 	it('should hold a value', () => {
@@ -41,8 +42,20 @@ describe('reactivity/ref', () => {
 			dummy = a.value.count
 		})
 		expect(dummy).toBe(1)
-    // ref 对象的 value property 的是一个响应式对象
+		// ref 对象的 value property 的是一个响应式对象
 		a.value.count = 2
 		expect(dummy).toBe(2)
+	})
+
+	it('isRef', () => {
+		expect(isRef(ref(1))).toBe(true)
+		expect(isRef(reactive({ foo: 1 }))).toBe(false)
+		expect(isRef(0)).toBe(false)
+		expect(isRef({ bar: 0 })).toBe(false)
+	})
+
+	it('unref', () => {
+		expect(unref(1)).toBe(1)
+		expect(unref(ref(1))).toBe(1)
 	})
 })

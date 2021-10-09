@@ -14,6 +14,8 @@ class RefImpl {
 	private _value
 	// 用于保存与当前 ref 对象相关的依赖
 	private dep
+  // 用于标志实例是一个 ref 对象
+	public __v_isRef = true
 
 	constructor(value) {
 		// 将传入的值赋值给实例的私有 property _rawValue
@@ -51,4 +53,14 @@ class RefImpl {
 export function ref(value): Ref {
 	// 返回 RefImpl 类的实例，即 ref 对象
 	return new RefImpl(value)
+}
+
+// 用于判断一个值是否是 ref 对象
+export function isRef(value): boolean {
+	return !!value.__v_isRef
+}
+
+// 用于获取 ref 对象的 value property 的值
+export function unref(ref) {
+	return isRef(ref) ? ref.value : ref
 }

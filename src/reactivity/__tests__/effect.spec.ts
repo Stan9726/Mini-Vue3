@@ -25,7 +25,7 @@ describe('effect', () => {
 
 	it('should return a function to be called manually', () => {
 		let foo = 0
-		// 用一个变量 runner 接收 effect 执行返回的函数
+		// 用一个变量 runner 接受 effect 执行返回的函数
 		const runner = effect(() => {
 			foo++
 			return 'foo'

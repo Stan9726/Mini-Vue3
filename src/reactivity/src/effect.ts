@@ -3,7 +3,7 @@ import { extend } from './../../shared/index'
 let shouldTrack: boolean = false
 
 // 抽离出一个 ReactiveEffect 类，对操作进行封装
-class ReactiveEffect {
+export class ReactiveEffect {
 	private _fn: any
 	// 用于保存与当前实例相关的响应式对象的 property 对应的 Set 实例
 	deps: Array<Set<ReactiveEffect>> = []
@@ -12,7 +12,7 @@ class ReactiveEffect {
 	// 用于保存当前实例的 onStop 方法
 	onStop?: () => void
 
-	// 构造函数接收可选的第二个参数，保存为实例的公共变量 scheduler
+	// 构造函数接受可选的第二个参数，保存为实例的公共变量 scheduler
 	constructor(fn, public scheduler?) {
 		// 将传入的函数赋值给实例的私有 property _fn
 		this._fn = fn
@@ -58,7 +58,7 @@ function cleanupEffect(effect: ReactiveEffect) {
 	})
 }
 
-// 接收一个函数作为第一个参数，接收一个对象作为第二个参数
+// 接受一个函数作为第一个参数，接受一个对象作为第二个参数
 export function effect(fn, options: any = {}) {
 	// 利用传入的函数创建 ReactiveEffect 类的实例，并将 scheduler 方法传给 ReactiveEffect 类的构造函数
 	const _effect: ReactiveEffect = new ReactiveEffect(fn, options.scheduler)

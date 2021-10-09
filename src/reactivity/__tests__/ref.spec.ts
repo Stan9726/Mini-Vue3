@@ -1,6 +1,6 @@
 import { effect } from '../src/effect'
 import { reactive } from '../src/reactive'
-import { isRef, ref, unref } from '../src/ref'
+import { isRef, proxyRefs, ref, unref } from '../src/ref'
 
 describe('reactivity/ref', () => {
 	it('should hold a value', () => {
@@ -57,5 +57,21 @@ describe('reactivity/ref', () => {
 	it('unref', () => {
 		expect(unref(1)).toBe(1)
 		expect(unref(ref(1))).toBe(1)
+	})
+
+	it('proxyRefs', () => {
+		const obj = {
+			foo: ref(1),
+			bar: 'baz'
+		}
+		const proxyObj = proxyRefs(obj)
+		expect(proxyObj.foo).toBe(1)
+		expect(proxyObj.bar).toBe('baz')
+
+		proxyObj.foo = 2
+		expect(proxyObj.foo).toBe(2)
+
+		proxyObj.foo = ref(3)
+		expect(proxyObj.foo).toBe(3)
 	})
 })

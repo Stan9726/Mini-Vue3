@@ -1,4 +1,4 @@
-// 用于创建 vnode 对象
+// 用于创建 VNode
 export function createVNode(type, props?, children?) {
 	const vnode = {
 		type,

@@ -7,9 +7,9 @@ export function render(vnode, container) {
 	patch(vnode, container)
 }
 
-// 用于处理组件对应的 vnode 对象
+// 用于处理组件对应的 VNode
 function patch(vnode, container) {
-	// 根据 vnode 对象类型的不同调用不同的函数
+	// 根据 VNode 类型的不同调用不同的函数
 
 	processComponent(vnode, container)
 
@@ -23,7 +23,7 @@ function processComponent(vnode, container) {
 
 // 用于进行 Component 的初始化
 function mountComponent(vnode, container) {
-	// 通过组件对应的 vnode 对象创建组件实例对象，用于挂载 props、slots 等
+	// 通过组件对应的 VNode 创建组件实例对象，用于挂载 props、slots 等
 	const instance = createComponentInstance(vnode)
 
 	setupComponent(instance)
@@ -31,11 +31,11 @@ function mountComponent(vnode, container) {
 	setupRenderEffect(instance, container)
 }
 
-// 用于获取 vnode 树并递归地处理
+// 用于获取 VNode 树并递归地处理
 function setupRenderEffect(instance, container) {
-	// 调用组件实例对象中 render 函数获取 vnode 树
+	// 调用组件实例对象中 render 函数获取 VNode 树
 	const subTree = instance.render()
 
-	// 调用 patch 方法递归地处理 vnode 树
+	// 调用 patch 方法递归地处理 VNode 树
 	patch(subTree, container)
 }

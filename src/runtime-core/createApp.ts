@@ -17,7 +17,7 @@ export function createApp(rootComponent) {
 		 * 返回根组件实例
 		 */
 		mount(rootContainer) {
-			// 将根组件转换为 vnode 对象
+			// 将根组件转换为 VNode
 			const vnode = createVNode(rootComponent)
 
 			render(vnode, rootContainer)

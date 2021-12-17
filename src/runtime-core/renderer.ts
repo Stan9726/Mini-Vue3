@@ -31,11 +31,26 @@ function mountElement(vnode, container) {
   // 通过解构赋值获取 Element 对应 VNode 的 props property、shapeFlag property 和 children property
   const { props, shapeFlag, children } = vnode
 
-  // 遍历 props，利用 Element.setAttribute() 将其中的 property 添加到 el 上
-  // 其中 key 作为 el 的 attribute 或 property 名，value 作为 attribute 或 property 的值
+  // 遍历 props，判断 property 的 key 并进行处理
   for (const key in props) {
     const val = props[key]
-    el.setAttribute(key, val)
+
+    // 用于通过正则判断该 property 的 key 是否以 on 开头，是则为注册事件，否则为 attribute 或 property
+    const isOn = (key: string) => /^on[A-Z]/.test(key)
+
+    // 若为注册事件
+    if (isOn(key)) {
+      // 利用 Element.addEventListener() 将该 property 添加到 el 上
+      // 其中 key 去掉前两位（也就是 on）再转为小写后的字符串作为事件名，value 作为 listener
+      const event = key.slice(2).toLowerCase()
+      el.addEventListener(event, val)
+    }
+    // 否则
+    else {
+      // 利用 Element.setAttribute() 将该 property 添加到 el 上
+      // 其中 key 作为 el 的 attribute 或 property 名，value 作为 attribute 或 property 的值
+      el.setAttribute(key, val)
+    }
   }
 
   // 通过 VNode shapeFlag property 与枚举变量 ShapeFlags 进行与运算来判断 children 类型

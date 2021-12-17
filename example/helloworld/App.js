@@ -7,7 +7,21 @@ export const App = {
   render() {
     window.self = this
     // 在 render 函数中通过 this 获取 setup 返回对象的 property
-    return h('div', {}, 'hello, ' + this.name)
+    return h(
+      'div',
+      {
+        id: 'root',
+        class: 'root-div',
+        // 注册事件
+        onClick() {
+          console.log('you clicked root-div')
+        },
+        onMousedown() {
+          console.log('your mouse down on root-div')
+        }
+      },
+      'hello, ' + this.name
+    )
     // return h('div', { id: 'root', class: 'root' }, [
     // 	h('p', { id: 'p1', class: 'p1' }, 'hello, mini-vue3'),
     // 	h('p', { id: 'p2', class: 'p2' }, 'this is mini-vue3')

@@ -12,4 +12,21 @@ export const hasChanged = (value, oldValue): boolean =>
 export const hasOwn = (val, key) =>
   Object.prototype.hasOwnProperty.call(val, key)
 
+// 用于将带连字符的字符串转换为驼峰式
+export const camelize = (str: string) => {
+  return str.replace(/-(\w)/g, (_, c: string) => {
+    return c ? c.toUpperCase() : ''
+  })
+}
+
+// 用于将字符串首字母转换为大写
+export const capitalize = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+// 用于在字符串之前加上 on
+export const toHandlerKey = (str: string) => {
+  return str ? 'on' + capitalize(str) : ''
+}
+
 export * from './ShapeFlags'

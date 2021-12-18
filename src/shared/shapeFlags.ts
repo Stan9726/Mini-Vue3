@@ -1,3 +1,4 @@
+// 用于判断 VNode 的 shapeFlag
 export const enum ShapeFlags {
   // 用于判断 VNode 类型是否是 Element
   ELEMENT = 1, // 0001

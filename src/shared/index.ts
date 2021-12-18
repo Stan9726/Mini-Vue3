@@ -8,4 +8,8 @@ export const isObject = value => typeof value === 'object' && value !== null
 export const hasChanged = (value, oldValue): boolean =>
   !Object.is(value, oldValue)
 
-export * from './shapeFlags'
+// 用于判断对象中是否有某个 property
+export const hasOwn = (val, key) =>
+  Object.prototype.hasOwnProperty.call(val, key)
+
+export * from './ShapeFlags'

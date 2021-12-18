@@ -1,10 +1,13 @@
+import { shallowReadonly } from '../reactivity'
+import { initProps } from './componentProps'
 import { PublicInstanceHandlers } from './componentPublicInstance'
 
 // 用于创建组件实例对象
 export function createComponentInstance(vnode) {
   const component = {
     vnode,
-    type: vnode.type
+    type: vnode.type,
+    setupState: {}
   }
 
   return component
@@ -12,7 +15,9 @@ export function createComponentInstance(vnode) {
 
 // 用于初始化 props、初始化 slots 和调用 setup 方法以及设置 render 函数
 export function setupComponent(instance) {
-  // TODO: 调用 initProps
+  // 将组件对应 VNode 的 props property 赋值给组件实例对象的 props property
+  initProps(instance, instance.vnode.props)
+
   // TODO: 调用 initSlots
 
   setupStatefulComponent(instance)
@@ -31,8 +36,8 @@ function setupStatefulComponent(instance: any) {
 
   // 若组件选项对象中包含 setup 方法则调用该方法并处理其返回值
   if (setup) {
-    // 调用 setup 方法并获取其返回值
-    const setupResult = setup()
+    // 调用 setup 方法传入 props 对象并获取其返回值
+    const setupResult = setup(shallowReadonly(instance.props))
 
     // 处理 setup 方法的返回值
     handleSetupResult(instance, setupResult)

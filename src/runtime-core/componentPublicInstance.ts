@@ -2,7 +2,8 @@ import { hasOwn } from '../shared'
 
 // 用于保存组件实例对象 property 及对应的 getter
 const publicPropertiesMap = {
-  $el: i => i.vnode.el
+  $el: i => i.vnode.el,
+  $slots: i => i.slots
 }
 
 // 组件实例对象 proxy property 对应的 handlers

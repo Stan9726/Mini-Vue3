@@ -2,6 +2,7 @@ import { shallowReadonly } from '../reactivity'
 import { emit } from './componentEmit'
 import { initProps } from './componentProps'
 import { PublicInstanceHandlers } from './componentPublicInstance'
+import { initSlots } from './componentSlots'
 
 // 用于创建组件实例对象
 export function createComponentInstance(vnode) {
@@ -10,6 +11,7 @@ export function createComponentInstance(vnode) {
     type: vnode.type,
     setupState: {},
     props: {},
+    slots: {},
     emit: () => {}
   }
 
@@ -24,7 +26,8 @@ export function setupComponent(instance) {
   // 将组件对应 VNode 的 props property 赋值给组件实例对象的 props property
   initProps(instance, instance.vnode.props)
 
-  // TODO: 调用 initSlots
+  // 若 children 为插槽则将其挂载到组件实例对象的 slots property 上
+  initSlots(instance, instance.vnode.children)
 
   setupStatefulComponent(instance)
 }

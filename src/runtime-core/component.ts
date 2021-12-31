@@ -21,7 +21,7 @@ export function createComponentInstance(vnode) {
   return component
 }
 
-// 用于初始化 props、初始化 slots 和调用 setup 方法以及设置 render 函数
+// 用于初始化 props、初始化 slots 和调用 setup 以及设置 render 函数
 export function setupComponent(instance) {
   // 将组件对应 VNode 的 props property 赋值给组件实例对象的 props property
   initProps(instance, instance.vnode.props)
@@ -40,24 +40,30 @@ function setupStatefulComponent(instance) {
   // 利用 Proxy 对组件实例对象的 proxy property 的 get 进行代理
   instance.proxy = new Proxy({ _: instance }, PublicInstanceHandlers)
 
-  // 通过解构赋值获取组件选项对象中的 setup 方法
+  // 通过解构赋值获取组件选项对象中的 setup
   const { setup } = Component
 
-  // 若组件选项对象中包含 setup 方法则调用该方法并处理其返回值
+  // 若组件选项对象中包含 setup 则调用该方法并处理其返回值
   if (setup) {
-    // 调用 setup 方法传入 props 对象和包含 emit 方法的对象并获取其返回值
+    // 将全局变量 currentInstance 赋值为当前组件实例对象
+    setCurrentInstance(instance)
+
+    // 调用 setup 传入 props 对象和包含 emit 方法的对象并获取其返回值
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit
     })
 
-    // 处理 setup 方法的返回值
+    // 将全局变量 currentInstance 赋值为 null
+    setCurrentInstance(null)
+
+    // 处理 setup 的返回值
     handleSetupResult(instance, setupResult)
   }
 }
 
-// 用于处理 setup 方法的返回值
+// 用于处理 setup 的返回值
 function handleSetupResult(instance, setupResult) {
-  // 根据 setup 方法返回值类型的不同进行不同的处理
+  // 根据 setup 返回值类型的不同进行不同的处理
   // 若返回一个 object 则将其注入到组件的上下文中
   if (typeof setupResult === 'object') {
     instance.setupState = setupResult
@@ -79,4 +85,17 @@ function finishComponentSetup(instance) {
   if (Component.render) {
     instance.render = Component.render
   }
+}
+
+// 用于保存当前组件实例对象
+let currentInstance = null
+
+// 用于获取当前组件的实例对象
+export function getCurrentInstance() {
+  return currentInstance
+}
+
+// 用于给全局变量 currentInstance 赋值
+function setCurrentInstance(instance) {
+  currentInstance = instance
 }

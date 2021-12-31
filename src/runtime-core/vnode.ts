@@ -1,5 +1,8 @@
 import { ShapeFlags } from '../shared'
 
+export const Fragment = Symbol('Fragment')
+export const Text = Symbol('Text')
+
 // 用于创建 VNode
 export function createVNode(type, props?, children?) {
   const vnode = {
@@ -30,6 +33,11 @@ export function createVNode(type, props?, children?) {
   }
 
   return vnode
+}
+
+// 用于创建 Text 类型的 VNode
+export function createTextVNode(text: string) {
+  return createVNode(Text, {}, text)
 }
 
 // 用于根据 VNode 的 type property 设置 shapeFlag 对应的位

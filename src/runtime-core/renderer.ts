@@ -1,5 +1,6 @@
 import { ShapeFlags } from '../shared'
 import { createComponentInstance, setupComponent } from './component'
+import { Fragment, Text } from './vnode'
 
 // 用于对根组件对应的 VNode 进行处理
 export function render(vnode, container) {
@@ -9,13 +10,40 @@ export function render(vnode, container) {
 // 用于处理组件对应的 VNode
 function patch(vnode, container) {
   // 根据 VNode 类型的不同调用不同的函数
-  // 通过 VNode shapeFlag property 与枚举变量 ShapeFlags 进行与运算来判断 VNode 类型
-  const { shapeFlag } = vnode
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container)
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container)
+  const { type, shapeFlag } = vnode
+
+  // 通过 VNode 的 type property 判断 VNode 类型
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container)
+      break
+    case Text:
+      processText(vnode, container)
+      break
+    default:
+      // 通过 VNode shapeFlag property 与枚举变量 ShapeFlags 进行与运算来判断 VNode 类型是 Element 或 Component
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container)
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container)
+      }
+      break
   }
+}
+
+// 用于处理 Fragment
+function processFragment(vnode, container) {
+  mountChildren(vnode.children, container)
+}
+
+// 用于处理 Text
+function processText(vnode, container) {
+  // 通过解构赋值获取 Text 对应 VNode 的 children，即文本内容
+  const { children } = vnode
+  // 利用 document.createTextNode() 创建文本节点
+  const textNode = document.createTextNode(children)
+  // 利用 Element.append() 将该节点添加到根容器/其父元素中
+  container.append(textNode)
 }
 
 // 用于处理 Element

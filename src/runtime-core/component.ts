@@ -5,13 +5,16 @@ import { PublicInstanceHandlers } from './componentPublicInstance'
 import { initSlots } from './componentSlots'
 
 // 用于创建组件实例对象
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
     type: vnode.type,
     setupState: {},
     props: {},
     slots: {},
+    // 若存在父组件则赋值为 父组件实例对象的 provides property，否则为空对象
+    provides: parent ? parent.provides : {},
+    parent,
     emit: () => {}
   }
 

@@ -1,4 +1,4 @@
-import { h } from '../../lib/mini-vue3.esm.js'
+import { createTextVNode, h } from '../../lib/mini-vue3.esm.js'
 import { Bar } from './Bar.js'
 import { Baz } from './Baz.js'
 import { Foo } from './Foo.js'
@@ -27,7 +27,10 @@ export const App = {
       Baz,
       {},
       {
-        content: props => h('p', {}, 'content: ' + props.msg)
+        content: props => [
+          h('p', {}, 'content: ' + props.msg),
+          createTextVNode('a text node')
+        ]
       }
     )
   }

@@ -2,7 +2,7 @@ import { createRenderer } from '../runtime-core'
 
 // 用于创建元素
 function createElement(type) {
-  // 利用 document.createElement() 创建新的 DOM 元素
+  // 利用 document.createElement() 创建 DOM 元素
   return document.createElement(type)
 }
 
@@ -32,8 +32,15 @@ function insert(el, parent) {
   parent.append(el)
 }
 
-// 调用 createRenderer 函数，并传入包含 createElement 函数、patchProp 函数和 insert 函数的对象
+// 用于创建文本节点
+function createText(text) {
+  // 利用 document.createTextNode() 创建文本节点
+  return document.createTextNode(text)
+}
+
+// 调用 createRenderer 函数，并传入包含 createText 函数、createElement 函数、patchProp 函数和 insert 函数的对象
 const renderer: any = createRenderer({
+  createText,
   createElement,
   patchProp,
   insert

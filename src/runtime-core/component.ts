@@ -1,4 +1,4 @@
-import { shallowReadonly } from '../reactivity'
+import { proxyRefs, shallowReadonly } from '../reactivity/src'
 import { emit } from './componentEmit'
 import { initProps } from './componentProps'
 import { PublicInstanceHandlers } from './componentPublicInstance'
@@ -15,6 +15,8 @@ export function createComponentInstance(vnode, parent) {
     // 若存在父组件则赋值为 父组件实例对象的 provides property，否则为空对象
     provides: parent ? parent.provides : {},
     parent,
+    subTree: {},
+    isMounted: false,
     emit: () => {}
   }
 
@@ -51,7 +53,7 @@ function setupStatefulComponent(instance) {
     // 将全局变量 currentInstance 赋值为当前组件实例对象
     setCurrentInstance(instance)
 
-    // 调用 setup 传入 props 对象和包含 emit 方法的对象并获取其返回值
+    // 调用 setup 传入 props 对象的 shallowReactive 响应式副本和包含 emit 方法的对象并获取其返回值
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit
     })
@@ -67,11 +69,11 @@ function setupStatefulComponent(instance) {
 // 用于处理 setup 的返回值
 function handleSetupResult(instance, setupResult) {
   // 根据 setup 返回值类型的不同进行不同的处理
-  // 若返回一个 object 则将其注入到组件的上下文中
+  // 若返回一个对象则调用 proxyRefs 并传入该对象，将返回值赋值给组件实例对象的 setupState property
   if (typeof setupResult === 'object') {
-    instance.setupState = setupResult
+    instance.setupState = proxyRefs(setupResult)
   }
-  // 若返回一个 function 则将其作为组件的 render 函数
+  // 若返回一个函数则将其作为组件的 render 函数
   else if (typeof setupResult === 'function') {
     // TODO: 处理 function
   }
@@ -84,7 +86,7 @@ function finishComponentSetup(instance) {
   // 通过组件实例对象的 type property 获取组件选项对象
   const Component = instance.type
 
-  // 若组件选项对象中包含 render 函数则将其赋值给组件实例对象的 render 方法
+  // 将组件选项对象中的 render 函数赋值给组件实例对象的 render 方法
   if (Component.render) {
     instance.render = Component.render
   }

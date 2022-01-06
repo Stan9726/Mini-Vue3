@@ -7,22 +7,30 @@ function createElement(type) {
 }
 
 // 用于将 props 对象中的 property 或方法添加到元素上
-function patchProp(el, key, val) {
+function patchProp(el, key, nextVal) {
   // 用于通过正则判断该 property 的 key 是否以 on 开头，是则为注册事件，否则为 attribute 或 property
   const isOn = (key: string) => /^on[A-Z]/.test(key)
 
   // 若为注册事件
   if (isOn(key)) {
-    // 利用 Element.addEventListener() 将该方法添加到 el 上
+    // 利用 Element.addEventListener() 将该方法添加到元素上
     // 其中 key 去掉前两位（也就是 on）再转为小写后的字符串作为事件名，value 作为 listener
     const event = key.slice(2).toLowerCase()
-    el.addEventListener(event, val)
+    el.addEventListener(event, nextVal)
   }
   // 否则
   else {
-    // 利用 Element.setAttribute() 将该 property 添加到 el 上
-    // 其中 key 作为 el 的 attribute 或 property 名，value 作为 attribute 或 property 的值
-    el.setAttribute(key, val)
+    // 若 props 对象中的 property 为 undefined 或 null
+    if (nextVal == null) {
+      // 利用 Element.removeAttribute() 将该 property 从元素上移除
+      el.removeAttribute(key)
+    }
+    // 否则
+    else {
+      // 利用 Element.setAttribute() 将该 property 添加到元素上
+      // 其中 key 作为元素的 attribute 或 property 名，value 作为 attribute 或 property 的值
+      el.setAttribute(key, nextVal)
+    }
   }
 }
 

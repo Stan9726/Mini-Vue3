@@ -72,13 +72,13 @@ export function createRenderer(options) {
 
   // 用于进行 Element 的初始化
   function mountElement(vnode, container, parentComponent) {
-    // 根据 Element 对应 VNode 的 type property 创建元素并同时赋值给变量 el 和 VNode 的 el property
+    // 根据 Element 对应 VNode 的 type property 创建元素并赋值给 VNode 的 el property
     const el = (vnode.el = hostCreateElement(vnode.type))
 
     // 通过解构赋值获取 Element 对应 VNode 的 props property、shapeFlag property 和 children property
     const { props, shapeFlag, children } = vnode
 
-    // 遍历 props，将其中的 property 或方法挂载到 el 上
+    // 遍历 props，将其中的 property 或方法挂载到新元素上
     for (const key in props) {
       const val = props[key]
       hostPatchProp(el, key, val)
@@ -91,13 +91,47 @@ export function createRenderer(options) {
       mountChildren(children, el, parentComponent)
     }
 
-    // 将 el 添加到根容器/父元素中
+    // 将新元素添加到根容器/父元素中
     hostInsert(el, container)
   }
 
+  // 用于进行 Element 的更新
   function patchElement(n1, n2, container) {
-    // TODO: 实现 patchElement 函数
-    console.log('update')
+    const oldProps = n1.props || {}
+    const newProps = n2.props || {}
+
+    // 将旧 VNode 的 el property 挂载到新 VNode 上
+    const el = (n2.el = n1.el)
+
+    patchProps(el, oldProps, newProps)
+  }
+
+  // 用于更新 Element 的 props
+  function patchProps(el, oldProps, newProps) {
+    if (oldProps !== newProps) {
+      // 遍历新 VNode 的 props 对象
+      for (const key in newProps) {
+        const prev = oldProps[key]
+        const next = newProps[key]
+
+        // 若新旧 VNode 的 props 对象中的 property 或方法不相等
+        if (prev !== next) {
+          // 将新 VNode 的 property 或方法挂载到元素上
+          hostPatchProp(el, key, next)
+        }
+      }
+
+      if (oldProps !== {}) {
+        // 遍历旧 VNode 的 props 对象
+        for (const key in oldProps) {
+          // 若新 VNode 的 props 对象中不包含该 property 或方法
+          if (!(key in newProps)) {
+            // 将元素上该 property 或方法赋值为 null
+            hostPatchProp(el, key, null)
+          }
+        }
+      }
+    }
   }
 
   // 用于遍历 children，对其中每个 VNode 调用 patch 方法进行处理

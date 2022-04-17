@@ -46,12 +46,33 @@ function createText(text) {
   return document.createTextNode(text)
 }
 
-// 调用 createRenderer 函数，并传入包含 createText 函数、createElement 函数、patchProp 函数和 insert 函数的对象
+// 用于移除元素
+function remove(child) {
+  // 获取当前元素的父元素
+  const parent = child.parentNode
+
+  if (parent) {
+    // 利用 Element.removeChild() 将元素从其父元素中移除
+    parent.removeChild(child)
+  }
+}
+
+// 用于修改元素的文本内容
+function setElementText(el, text) {
+  el.textContent = text
+}
+
+/**
+ * 调用 createRenderer 函数，并传入包含 createText 函数、createElement 函数、
+ * patchProp 函数、insert 函数、remove 函数和 setElementText 函数的对象
+ */
 const renderer: any = createRenderer({
   createText,
   createElement,
   patchProp,
-  insert
+  insert,
+  remove,
+  setElementText
 })
 
 // 用于创建应用实例

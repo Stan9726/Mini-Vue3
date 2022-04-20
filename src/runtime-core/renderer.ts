@@ -21,18 +21,18 @@ export function createRenderer(options) {
 
   // 用于对根组件对应的 VNode 进行处理
   function render(vnode, container) {
-    patch(null, vnode, container, null)
+    patch(null, vnode, container, null, null)
   }
 
   // 用于处理 VNode
-  function patch(n1, n2, container, parentComponent) {
+  function patch(n1, n2, container, parentComponent, anchor) {
     // 根据新 VNode 类型的不同调用不同的函数
     const { type, shapeFlag } = n2
 
     // 通过新 VNode 的 type property 判断 VNode 类型
     switch (type) {
       case Fragment:
-        processFragment(n1, n2, container, parentComponent)
+        processFragment(n1, n2, container, parentComponent, anchor)
         break
       case Text:
         processText(n1, n2, container)
@@ -40,17 +40,17 @@ export function createRenderer(options) {
       default:
         // 通过新 VNode 的 shapeFlag property 与枚举变量 ShapeFlags 进行与运算来判断类型是 Element 或 Component
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(n1, n2, container, parentComponent)
+          processElement(n1, n2, container, parentComponent, anchor)
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(n1, n2, container, parentComponent)
+          processComponent(n1, n2, container, parentComponent, anchor)
         }
         break
     }
   }
 
   // 用于处理 Fragment
-  function processFragment(n1, n2, container, parentComponent) {
-    mountChildren(n2.children, container, parentComponent)
+  function processFragment(n1, n2, container, parentComponent, anchor) {
+    mountChildren(n2.children, container, parentComponent, anchor)
   }
 
   // 用于处理 Text
@@ -64,19 +64,19 @@ export function createRenderer(options) {
   }
 
   // 用于处理 Element
-  function processElement(n1, n2, container, parentComponent) {
+  function processElement(n1, n2, container, parentComponent, anchor) {
     // 若旧 VNode 不存在则进行新 Element 的初始化
     if (!n1) {
-      mountElement(n2, container, parentComponent)
+      mountElement(n2, container, parentComponent, anchor)
     }
     // 否则进行 Element 的更新
     else {
-      patchElement(n1, n2, container, parentComponent)
+      patchElement(n1, n2, container, parentComponent, anchor)
     }
   }
 
   // 用于进行 Element 的初始化
-  function mountElement(vnode, container, parentComponent) {
+  function mountElement(vnode, container, parentComponent, anchor) {
     // 根据 Element 对应 VNode 的 type property 创建元素并赋值给 VNode 的 el property
     const el = (vnode.el = hostCreateElement(vnode.type))
 
@@ -93,15 +93,15 @@ export function createRenderer(options) {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(children, el, parentComponent)
+      mountChildren(children, el, parentComponent, anchor)
     }
 
     // 将新元素添加到根容器/父元素中
-    hostInsert(el, container)
+    hostInsert(el, container, anchor)
   }
 
   // 用于进行 Element 的更新
-  function patchElement(n1, n2, container, parentComponent) {
+  function patchElement(n1, n2, container, parentComponent, anchor) {
     const oldProps = n1.props || {}
     const newProps = n2.props || {}
 
@@ -113,7 +113,7 @@ export function createRenderer(options) {
   }
 
   // 用于更新 Element 的 children
-  function patchChildren(n1, n2, container, parentComponent) {
+  function patchChildren(n1, n2, container, parentComponent, anchor) {
     // 通过结构赋值分别获得新旧 VNode 的 children 和 shapeFlag property
     const { children: c1, shapeFlag: prevShapeFlag } = n1
     const { children: c2, shapeFlag: nextShapeFlag } = n2
@@ -140,11 +140,11 @@ export function createRenderer(options) {
         hostSetElementText(container, '')
 
         // 将新 VNode 的 children 添加到根容器/父元素中
-        mountChildren(c2, container, parentComponent)
+        mountChildren(c2, container, parentComponent, anchor)
       }
       // 同时旧 VNode 的 children 类型为 Array
       else {
-        // TODO: Array2Array
+        patchKeyedChildren(c1, c2, container, parentComponent, anchor)
       }
     }
   }
@@ -192,25 +192,232 @@ export function createRenderer(options) {
     }
   }
 
+  // 用于针对数组情况更新 Element 的 children
+  function patchKeyedChildren(
+    c1,
+    c2,
+    container,
+    parentComponent,
+    parentAnchor
+  ) {
+    const l2 = c2.length
+    // 用于双端对比的指针（索引）
+    let i = 0
+    let e1 = c1.length - 1
+    let e2 = l2 - 1
+
+    // 用于判断两个元素是否是同一 VNode
+    function isSameVNodeType(n1, n2) {
+      // 若 type property 和 key property 均相同则返回 true
+      return n1.type === n2.type && n1.key === n2.key
+    }
+
+    // 从头遍历
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i]
+      const n2 = c2[i]
+
+      // 若两个元素是同一 VNode 则对其调用 patch 方法进行更新
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentComponent, parentAnchor)
+      }
+      // 否则结束遍历，此时 i 为从头遍历时差异位置在两个数组中的索引
+      else {
+        break
+      }
+
+      i++
+    }
+
+    // 从尾遍历
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1]
+      const n2 = c2[e2]
+
+      // 若两个元素是同一 VNode 则对其调用 patch 方法进行更新
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentComponent, parentAnchor)
+      }
+      // 否则结束遍历，此时 e1 和 e2 分别为从尾遍历时差异位置在两个数组中的索引
+      else {
+        break
+      }
+
+      e1--
+      e2--
+    }
+
+    // 若 i > e1 则说明新的数组比旧的长，将多出的元素依次向旧的中插入
+    if (i > e1) {
+      if (i <= e2) {
+        // 要插入位置的下一个元素的索引是 e2+1
+        const nextPos = e2 + 1
+        // 若 e2+1 小于新的数组长度，则锚点为新的数组中索引为 e2+1 的 VNode 的 el property，否则为 null
+        const anchor = nextPos < l2 ? c2[nextPos].el : null
+
+        // 依次对子数组[i,e2]中的 VNode 调用 patch 方法进行插入
+        while (i <= e2) {
+          patch(null, c2[i], container, parentComponent, anchor)
+
+          i++
+        }
+      }
+    }
+    // 若 i > e2 则说明旧的数组比新的长，将多出的元素依次从旧的中移除
+    else if (i > e2) {
+      // 依次移除子数组[i,e1]中的 VNode
+      while (i <= e1) {
+        hostRemove(c1[i].el)
+
+        i++
+      }
+    }
+    // 若 i <= e1 且 i <= e2 则说明子数组[i,e1]和子数组[i,e2]有差异
+    else {
+      let s = i
+
+      // 用于保存需要调用 patch 方法的次数
+      const toBePatched = e2 - s + 1
+      // 用于记录调用 patch 方法的次数
+      let patched = 0
+
+      // 用于保存子数组[i,e2]中元素的索引，key 为 VNode 的 key property，value 为索引
+      const keyToNewIndexMap = new Map()
+      // 用于保存子数组[i,e2]中元素在旧的数组中的索引，默认为 0，在保存时加 1
+      const newIndexToOldIndexMap = new Array(toBePatched)
+      // 用于标志是否存在元素移动
+      let moved = false
+      // 用于保存遍历子数组[i,e1]时其中元素在新的数组中的最大索引
+      let maxNewIndexSoFar = 0
+
+      for (let i = 0; i < toBePatched; i++) {
+        newIndexToOldIndexMap[i] = 0
+      }
+
+      // 遍历子数组[i,e2]，保存其中元素的索引
+      for (let i = s; i <= e2; i++) {
+        const nextChild = c2[i]
+
+        keyToNewIndexMap.set(nextChild.key, i)
+      }
+
+      // 遍历子数组[i,e1]，依次进行处理
+      for (let i = s; i <= e1; i++) {
+        const prevChild = c1[i]
+
+        // 若 patched 大于等于 toBePatched，则说明当前元素是要移除的元素，可直接移除
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el)
+
+          continue
+        }
+
+        let newIndex
+        // 若当前元素包含 key property，则从 keyToNewIndexMap 中获取其在新的数组中的索引
+        if (prevChild.key != null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key)
+        }
+        // 否则
+        else {
+          // 遍历子数组[i,e2]获取其索引
+          for (let j = s; j <= e2; j++) {
+            if (isSameVNodeType(prevChild, c2[j])) {
+              newIndex = j
+
+              break
+            }
+          }
+        }
+
+        // 若当前元素在新的数组中的索引不存在则其不在新的数组中，可直接移除
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el)
+        }
+        // 否则对当前元素调用 patch 方法进行更新
+        else {
+          // 若当前元素在新的数组中的索引大于等于 maxNewIndexSoFar，则更新后者
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex
+          }
+          // 否则说明存在元素移动，将 moved 的值变为 true
+          else {
+            moved = true
+          }
+
+          // 保存当前元素在旧的数组中的索引
+          newIndexToOldIndexMap[newIndex - s] = i + 1
+          // 对当前元素调用 patch 方法进行更新
+          patch(prevChild, c2[newIndex], container, parentComponent, null)
+
+          patched++
+        }
+      }
+
+      /**
+       * 用于保存最长递增子序列
+       * 若 moved 为 true 则存在元素移动
+       * 通过 getSequence() 函数获取 newIndexToOldIndexMap 的最长递增子序列
+       */
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : []
+      // 用于倒序遍历最长递增子序列
+      let j = increasingNewIndexSequence.length - 1
+
+      // 倒序遍历子数组[i,e2]，依次进行处理
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        // 用于保存当前元素在新的数组中的索引
+        const nextIndex = i + s
+        const nextChild = c2[nextIndex]
+        /**
+         * 若 nextIndex+1 小于新的数组长度
+         * 则锚点为新的数组中索引为 nextIndex+1 的 VNode 的 el property
+         * 否则为 null
+         */
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null
+
+        /**
+         * 若在 newIndexToOldIndexMap 中当前元素在子数组[i,e2]索引对应的值为 0
+         * 则说明该元素不在旧的数组中，对其调用 patch 方法进行插入
+         */
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor)
+        }
+        // 若存在元素移动
+        else if (moved) {
+          /**
+           * 若 j 小于 0，即最长递增子序列已遍历完
+           * 或者当前元素在子数组[i,e2]索引与最长递增子序列中索引为 j 的值不相等
+           * 则说明当前元素是要移动的元素
+           */
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            // 将当前元素插入到其要移动到的位置
+            hostInsert(nextChild.el, container, anchor)
+          } else {
+            j--
+          }
+        }
+      }
+    }
   }
 
   // 用于处理 Component
-  function processComponent(n1, n2, container, parentComponent) {
-    mountComponent(n2, container, parentComponent)
+  function processComponent(n1, n2, container, parentComponent, anchor) {
+    mountComponent(n2, container, parentComponent, anchor)
   }
 
   // 用于进行 Component 的初始化
-  function mountComponent(vnode, container, parentComponent) {
+  function mountComponent(vnode, container, parentComponent, anchor) {
     // 通过组件对应的 VNode 创建组件实例对象，用于挂载 props、slots 等
     const instance = createComponentInstance(vnode, parentComponent)
 
     setupComponent(instance)
 
-    setupRenderEffect(instance, vnode, container)
+    setupRenderEffect(instance, vnode, container, anchor)
   }
 
   // 用于处理 VNode 树
-  function setupRenderEffect(instance, vnode, container) {
+  function setupRenderEffect(instance, vnode, container, anchor) {
     // 利用 effect 将调用 render 函数和 patch 方法的操作收集
     effect(() => {
       // 根据组件实例对象的 isMounted property 判断是初始化或更新 VNode 树
@@ -223,7 +430,7 @@ export function createRenderer(options) {
         const subTree = (instance.subTree = instance.render.call(proxy))
 
         // 调用 patch 方法处理 VNode 树
-        patch(null, subTree, container, instance)
+        patch(null, subTree, container, instance, anchor)
 
         // 将 VNode 树的 el property 赋值给 VNode 的 el property
         vnode.el = subTree.el
@@ -240,7 +447,7 @@ export function createRenderer(options) {
         const subTree = (instance.subTree = instance.render.call(proxy))
 
         // 调用 patch 方法处理新旧 VNode 树
-        patch(preSubTree, subTree, container, instance)
+        patch(preSubTree, subTree, container, instance, anchor)
       }
     })
   }
@@ -249,4 +456,45 @@ export function createRenderer(options) {
   return {
     createApp: createAppAPI(render)
   }
+}
+
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice()
+  const result = [0]
+  let i, j, u, v, c
+  const len = arr.length
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i]
+    if (arrI !== 0) {
+      j = result[result.length - 1]
+      if (arr[j] < arrI) {
+        p[i] = j
+        result.push(i)
+        continue
+      }
+      u = 0
+      v = result.length - 1
+      while (u < v) {
+        c = (u + v) >> 1
+        if (arr[result[c]] < arrI) {
+          u = c + 1
+        } else {
+          v = c
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1]
+        }
+        result[u] = i
+      }
+    }
+  }
+  u = result.length
+  v = result[u - 1]
+  while (u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
 }

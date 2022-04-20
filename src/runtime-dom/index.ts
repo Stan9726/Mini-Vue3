@@ -35,9 +35,9 @@ function patchProp(el, key, nextVal) {
 }
 
 // 用于将元素添加到根容器/父元素中
-function insert(el, parent) {
-  // 利用 Element.append() 将元素添加到根容器/父元素中
-  parent.append(el)
+function insert(child, parent, anchor) {
+  // 利用 Element.insertBefore() 将元素添加到根容器/父元素中
+  parent.insertBefore(child, anchor || null)
 }
 
 // 用于创建文本节点

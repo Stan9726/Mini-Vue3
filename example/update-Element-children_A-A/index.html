@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
+
+      .container .demo {
+        width: 80px;
+        height: 60px;
+        position: relative;
+        border: 1px solid red;
+        margin-bottom: 10px;
+      }
+
+      .container .demo button {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+      }
+
+      .added {
+        color: red;
+      }
+
+      .deleted {
+        color: blue;
+      }
+
+      .moved {
+        color: orange;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 根容器 -->
+    <div id="app"></div>
+    <script src="main.js" type="module"></script>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 import { effect } from '../reactivity/src'
 import { ShapeFlags } from '../shared'
 import { createComponentInstance, setupComponent } from './component'
+import { shouldUpdateComponent } from './componentUpdateUtils'
 import { createAppAPI } from './createApp'
 import { Fragment, Text } from './vnode'
 
@@ -65,17 +66,17 @@ export function createRenderer(options) {
 
   // 用于处理 Element
   function processElement(n1, n2, container, parentComponent, anchor) {
-    // 若旧 VNode 不存在则进行新 Element 的初始化
+    // 若旧 VNode 不存在则初始化 Element
     if (!n1) {
       mountElement(n2, container, parentComponent, anchor)
     }
-    // 否则进行 Element 的更新
+    // 否则更新 Element
     else {
       patchElement(n1, n2, container, parentComponent, anchor)
     }
   }
 
-  // 用于进行 Element 的初始化
+  // 用于初始化 Element
   function mountElement(vnode, container, parentComponent, anchor) {
     // 根据 Element 对应 VNode 的 type property 创建元素并赋值给 VNode 的 el property
     const el = (vnode.el = hostCreateElement(vnode.type))
@@ -100,12 +101,12 @@ export function createRenderer(options) {
     hostInsert(el, container, anchor)
   }
 
-  // 用于进行 Element 的更新
+  // 用于更新 Element
   function patchElement(n1, n2, container, parentComponent, anchor) {
     const oldProps = n1.props || {}
     const newProps = n2.props || {}
 
-    // 将旧 VNode 的 el property 挂载到新 VNode 上
+    // 获取旧 VNode 的 el property 并将其挂载到新 VNode 上
     const el = (n2.el = n1.el)
 
     patchChildren(n1, n2, el, parentComponent, anchor)
@@ -403,30 +404,61 @@ export function createRenderer(options) {
 
   // 用于处理 Component
   function processComponent(n1, n2, container, parentComponent, anchor) {
-    mountComponent(n2, container, parentComponent, anchor)
+    // 若旧 VNode 不存在则初始化 Component
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor)
+    }
+    // 否则更新 Component
+    else {
+      updateComponent(n1, n2)
+    }
   }
 
-  // 用于进行 Component 的初始化
+  // 用于初始化 Component
   function mountComponent(vnode, container, parentComponent, anchor) {
-    // 通过组件对应的 VNode 创建组件实例对象，用于挂载 props、slots 等
-    const instance = createComponentInstance(vnode, parentComponent)
+    // 通过组件对应的 VNode 创建组件实例对象，用于挂载 props、slots 等，并将其挂载到 VNode 上
+    const instance = (vnode.component = createComponentInstance(
+      vnode,
+      parentComponent
+    ))
 
     setupComponent(instance)
 
     setupRenderEffect(instance, vnode, container, anchor)
   }
 
+  // 用于更新 Component
+  function updateComponent(n1, n2) {
+    // 获取旧 VNode 对应组件实例对象并将其挂载到新 VNode 上
+    const instance = (n2.component = n1.component)
+
+    // 若需要更新组件
+    if (shouldUpdateComponent(n1, n2)) {
+      // 将新 VNode 挂载到组件实例对象上
+      instance.next = n2
+      // 调用组件实例对象的 update 方法
+      instance.update()
+    }
+    // 否则
+    else {
+      // 将旧 VNode 的 el property 挂载到新 VNode 上
+      n2.el = n1.el
+      // 将新 VNode 挂载到组件实例对象上
+      instance.vnode = n2
+    }
+  }
+
   // 用于处理 VNode 树
   function setupRenderEffect(instance, vnode, container, anchor) {
-    // 利用 effect 将调用 render 函数和 patch 方法的操作收集
-    effect(() => {
+    // 利用 effect 将调用 render 函数和 patch 方法的操作收集，并将 effect 返回的函数保存为组件实例对象的 update 方法
+    instance.update = effect(() => {
       // 根据组件实例对象的 isMounted property 判断是初始化或更新 VNode 树
       // 若为 false 则是初始化
       if (!instance.isMounted) {
         // 通过解构赋值获取组件实例对象的 proxy property
         const { proxy } = instance
 
-        // 调用组件实例对象中 render 函数获取 VNode 树，同时将 this 指向指定为 proxy property
+        // 调用组件实例对象中 render 函数获取 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
         const subTree = (instance.subTree = instance.render.call(proxy))
 
         // 调用 patch 方法处理 VNode 树
@@ -440,10 +472,17 @@ export function createRenderer(options) {
       }
       // 否则是更新
       else {
-        // 通过解构赋值获取组件实例对象的 proxy property 和旧 VNode 树
-        const { proxy, subTree: preSubTree } = instance
+        // 通过解构赋值获取组件对应新旧 VNode 以及组件实例对象的 proxy property 和旧 VNode 树
+        const { next, vnode, proxy, subTree: preSubTree } = instance
 
-        // 调用组件实例对象中 render 函数获取新 VNode 树，同时将 this 指向指定为 proxy property
+        if (next) {
+          // 将旧 VNode 的 el property 挂载到新 VNode 上
+          next.el = vnode.el
+
+          updateComponentPreRender(instance, next)
+        }
+
+        // 调用组件实例对象中 render 函数获取新 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
         const subTree = (instance.subTree = instance.render.call(proxy))
 
         // 调用 patch 方法处理新旧 VNode 树
@@ -456,6 +495,13 @@ export function createRenderer(options) {
   return {
     createApp: createAppAPI(render)
   }
+}
+
+// 用于更新组件实例对象的 property
+function updateComponentPreRender(instance, nextVNode) {
+  instance.vnode = nextVNode
+  instance.next = null
+  instance.props = nextVNode.props
 }
 
 function getSequence(arr: number[]): number[] {

@@ -12,6 +12,8 @@ export function createVNode(type, props?, children?) {
     props,
     // 子 VNode
     children,
+    // 对应组件实例对象
+    component: null,
     // VNode 和 children 类型的标志位
     shapeFlag: getShapeFlag(type),
     // 对应组件的 key attribute

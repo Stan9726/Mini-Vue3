@@ -3,6 +3,7 @@ import { ShapeFlags } from '../shared'
 import { createComponentInstance, setupComponent } from './component'
 import { shouldUpdateComponent } from './componentUpdateUtils'
 import { createAppAPI } from './createApp'
+import { queueJobs } from './scheduler'
 import { Fragment, Text } from './vnode'
 
 // 用于创建 render 函数
@@ -451,44 +452,53 @@ export function createRenderer(options) {
   // 用于处理 VNode 树
   function setupRenderEffect(instance, vnode, container, anchor) {
     // 利用 effect 将调用 render 函数和 patch 方法的操作收集，并将 effect 返回的函数保存为组件实例对象的 update 方法
-    instance.update = effect(() => {
-      // 根据组件实例对象的 isMounted property 判断是初始化或更新 VNode 树
-      // 若为 false 则是初始化
-      if (!instance.isMounted) {
-        // 通过解构赋值获取组件实例对象的 proxy property
-        const { proxy } = instance
+    instance.update = effect(
+      () => {
+        // 根据组件实例对象的 isMounted property 判断是初始化或更新 VNode 树
+        // 若为 false 则是初始化
+        if (!instance.isMounted) {
+          // 通过解构赋值获取组件实例对象的 proxy property
+          const { proxy } = instance
 
-        // 调用组件实例对象中 render 函数获取 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
-        const subTree = (instance.subTree = instance.render.call(proxy))
+          // 调用组件实例对象中 render 函数获取 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
+          const subTree = (instance.subTree = instance.render.call(proxy))
 
-        // 调用 patch 方法处理 VNode 树
-        patch(null, subTree, container, instance, anchor)
+          // 调用 patch 方法处理 VNode 树
+          patch(null, subTree, container, instance, anchor)
 
-        // 将 VNode 树的 el property 赋值给 VNode 的 el property
-        vnode.el = subTree.el
+          // 将 VNode 树的 el property 赋值给 VNode 的 el property
+          vnode.el = subTree.el
 
-        // 将组件实例对象的 isMounted property 赋值为 true
-        instance.isMounted = true
-      }
-      // 否则是更新
-      else {
-        // 通过解构赋值获取组件对应新旧 VNode 以及组件实例对象的 proxy property 和旧 VNode 树
-        const { next, vnode, proxy, subTree: preSubTree } = instance
-
-        if (next) {
-          // 将旧 VNode 的 el property 挂载到新 VNode 上
-          next.el = vnode.el
-
-          updateComponentPreRender(instance, next)
+          // 将组件实例对象的 isMounted property 赋值为 true
+          instance.isMounted = true
         }
+        // 否则是更新
+        else {
+          // 通过解构赋值获取组件对应新旧 VNode 以及组件实例对象的 proxy property 和旧 VNode 树
+          const { next, vnode, proxy, subTree: preSubTree } = instance
 
-        // 调用组件实例对象中 render 函数获取新 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
-        const subTree = (instance.subTree = instance.render.call(proxy))
+          if (next) {
+            // 将旧 VNode 的 el property 挂载到新 VNode 上
+            next.el = vnode.el
 
-        // 调用 patch 方法处理新旧 VNode 树
-        patch(preSubTree, subTree, container, instance, anchor)
+            updateComponentPreRender(instance, next)
+          }
+
+          // 调用组件实例对象中 render 函数获取新 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
+          const subTree = (instance.subTree = instance.render.call(proxy))
+
+          // 调用 patch 方法处理新旧 VNode 树
+          patch(preSubTree, subTree, container, instance, anchor)
+        }
+      },
+      // 传入包含 scheduler 方法的对象作为第二个参数
+      {
+        // 在 scheduler 方法中将组件实例对象的 update 方法保存到队列中
+        scheduler() {
+          queueJobs(instance.update)
+        }
       }
-    })
+    )
   }
 
   // 返回一个包含 createApp 的对象，方法具体为调用 createAppAPI 函数并传入 render 函数

@@ -4,6 +4,8 @@ export const extend = Object.assign
 // 用于判断一个变量是否为对象
 export const isObject = value => typeof value === 'object' && value !== null
 
+export const isString = value => typeof value === 'string'
+
 // 用于判断两个值或对象是否相等
 export const hasChanged = (value, oldValue): boolean =>
   !Object.is(value, oldValue)

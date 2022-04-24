@@ -461,7 +461,10 @@ export function createRenderer(options) {
           const { proxy } = instance
 
           // 调用组件实例对象中 render 函数获取 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
-          const subTree = (instance.subTree = instance.render.call(proxy))
+          const subTree = (instance.subTree = instance.render.call(
+            proxy,
+            proxy
+          ))
 
           // 调用 patch 方法处理 VNode 树
           patch(null, subTree, container, instance, anchor)
@@ -485,7 +488,10 @@ export function createRenderer(options) {
           }
 
           // 调用组件实例对象中 render 函数获取新 VNode 树，同时将 this 指向指定为 proxy property，并将其挂载到组件实例对象上
-          const subTree = (instance.subTree = instance.render.call(proxy))
+          const subTree = (instance.subTree = instance.render.call(
+            proxy,
+            proxy
+          ))
 
           // 调用 patch 方法处理新旧 VNode 树
           patch(preSubTree, subTree, container, instance, anchor)

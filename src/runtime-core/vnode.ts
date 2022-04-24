@@ -3,6 +3,8 @@ import { ShapeFlags } from '../shared'
 export const Fragment = Symbol('Fragment')
 export const Text = Symbol('Text')
 
+export { createVNode as createElementVNode }
+
 // 用于创建 VNode
 export function createVNode(type, props?, children?) {
   const vnode = {

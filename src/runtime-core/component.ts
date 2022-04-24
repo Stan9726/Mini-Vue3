@@ -92,6 +92,10 @@ function finishComponentSetup(instance) {
   // 将组件选项对象中的 render 函数赋值给组件实例对象的 render 方法
   if (Component.render) {
     instance.render = Component.render
+  } else if (compiler) {
+    if (Component.template) {
+      instance.render = compiler(Component.template)
+    }
   }
 }
 
@@ -106,4 +110,10 @@ export function getCurrentInstance() {
 // 用于给全局变量 currentInstance 赋值
 function setCurrentInstance(instance) {
   currentInstance = instance
+}
+
+let compiler
+
+export function registerRuntimeCompiler(_compiler) {
+  compiler = _compiler
 }

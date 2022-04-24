@@ -32,3 +32,5 @@ export const toHandlerKey = (str: string) => {
 }
 
 export * from './shapeFlags'
+
+export * from './toDisplayString'

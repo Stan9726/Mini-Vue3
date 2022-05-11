@@ -9,7 +9,7 @@
 [手写 Mini-Vue3 专栏](https://juejin.cn/column/7028767798591815710)文章列表：
 
 1. [了解 Vue3 源码结构 + 初始化项目](https://juejin.cn/post/7029145067755421726)
-2. [实现 reactivity - reactive 和 effect](https://juejin.cn/post/7028771190416080933)
-3. [实现 reactivity - readonly、shallowReactive 和 shallowReadonly](https://juejin.cn/post/7029147690906697765)
-4. [实现 reactivity - ref 和 computed](https://juejin.cn/post/7029147829134164004)
-5. [实现 runtime-core - Component 和 Element 初始化，以及组件代理对象、shapeFlags 和 注册事件](https://juejin.cn/editor/drafts/7037021594861961229)
+2. [一篇文章两个小时彻底搞懂 Vue3 的 reactivity](https://juejin.cn/post/7028771190416080933)
+3. [一起来看看 Vue3 在渲染时具体做了哪些工作（上）](https://juejin.cn/post/7037023568877584414)
+4. [一起来看看 Vue3 在渲染时具体做了哪些工作（下）](https://juejin.cn/post/7055109077659025415)
+5. [带你理解 Vue3 如何把页面上的 0 更新成 1 ](https://juejin.cn/post/7096386880161185806)
